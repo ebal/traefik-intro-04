@@ -1,0 +1,49 @@
+---
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: traefik
+    hostname: traefik
+    env_file:
+      - ./default.env # Simplified path
+    restart: unless-stopped
+    ports:
+      # The Web UI (enabled by --api.insecure=true)
+      - 8080:8080
+      # The HTTP port
+      - 80:80
+      # The HTTPS port
+      - 443:443
+    volumes:
+        # The directory where the ACME certificates are saved.
+      - ./certs:/certs
+        # Traefik configuration directory
+      - ./traefik:/etc/traefik
+        # Docker socket for Traefik, to listen to docker containers.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # Add health check
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck"]
+      interval: 30s
+      retries: 3
+      timeout: 10s
+      start_period: 10s
+
+  # A container that exposes an API to show its IP address
+  whoami:
+    image: traefik/whoami
+    container_name: whoami
+    hostname: whoami
+    depends_on:
+      traefik:
+        condition: service_healthy # Wait for Traefik to be healthy
+    labels:
+          # Enable routing for whoami service in Traefik
+        - traefik.enable=true
+          # The host rule for the whoami service
+        - traefik.http.routers.whoami.rule=Host(`whoami.example.org`)
+          # Listen only to WebSecure EntryPoint (only on 443)
+        - traefik.http.routers.whoami.entryPoints=websecure
+          # Let's Encrypt as TLS certificate resolver
+        - traefik.http.routers.whoami.tls.certResolver=letsencrypt
+

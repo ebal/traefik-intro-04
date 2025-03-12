@@ -1,0 +1,46 @@
+# The /ping health-check URL
+ping: {}
+
+# API and dashboard configuration
+api:
+    dashboard: true
+    insecure: true
+
+# Debug log
+log:
+    filePath: /etc/traefik/traefik.log
+    level: DEBUG
+
+# Enable EntryPoints
+entryPoints:
+
+    web:
+        address: ":80"
+        reusePort: true
+
+    websecure:
+        address: ":443"
+        reusePort: true
+
+certificatesResolvers:
+    letsencrypt:
+        acme:
+            # caServer: https://acme-v02.api.letsencrypt.org/directory # Default
+            caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+            email: acme-staging@disposable.space
+            # Local Directory to store TLS certificates
+            storage: /certs/acme.json
+            # When using the TLS-ALPN-01 challenge, Traefik must be reachable by Let's Encrypt through port 443.
+            tlsChallenge: {}
+
+# Providers
+providers:
+    # Enable docker provider
+    docker:
+        exposedByDefault: false
+
+    # Enable file provider
+    file:
+        directory: /etc/traefik/dynamic/
+        watch: true
+
